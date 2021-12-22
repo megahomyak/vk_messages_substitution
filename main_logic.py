@@ -1,45 +1,98 @@
 import asyncio
+import json
+import random
 import sys
-from typing import Optional
+from typing import Optional, Dict
 
 import loguru
 import vkbottle.user
 
-SUBSTITUTIONS = {
-    "nometa": "nometa.xyz",
-    "pydocs": "docs.python.org/3/tutorial/index.html"
-}
+DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 
 
-bot = vkbottle.user.User(token=open("token.txt").read())
+class Bot:
 
-my_id: Optional[int] = None
+    def __init__(
+            self, bot: vkbottle.user.User, substitutions_string: str,
+            substitutions: Dict[str, str], substitutions_file_name: str):
+        self.bot = bot
+        self.substitutions_string = substitutions_string
+        self.substitutions = substitutions
+        self.my_id: Optional[int] = None
+        self.substitutions_file_name = substitutions_file_name
 
+    @classmethod
+    def make(cls):
+        bot = vkbottle.user.User(token=open("token.txt").read())
+        substitutions_string = (
+            open(DEFAULT_SUBSTITUTIONS_FILE_NAME, encoding="utf-8").read()
+        )
+        obj = cls(
+            bot=bot,
+            substitutions_string=substitutions_string,
+            substitutions=json.loads(substitutions_string),
+            substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME
+        )
+        bot.on.message()(obj.on_message)
+        return obj
 
-@bot.on.message()
-async def on_message(message: vkbottle.user.Message):
-    if message.from_id == my_id:
-        try:
-            substitution = SUBSTITUTIONS[message.text]
-        except KeyError:
-            pass
-        else:
-            await bot.api.messages.edit(
-                peer_id=message.peer_id, message_id=message.id,
-                message=substitution, keep_forward_messages=True,
-                dont_parse_links=True
-            )
-            return
+    async def start(self):
+        me = (await self.bot.api.users.get())[0]
+        self.my_id = me.id
+        await self.bot.run_polling()
+
+    async def _send_message(
+            self, original_message: vkbottle.user.Message, text: str):
+        await self.bot.api.messages.send(
+            peer_id=original_message.peer_id, message=text,
+            dont_parse_links=True, disable_mentions=True,
+            random_id=random.randint(-1_000_000, 1_000_000)
+        )
+
+    async def on_message(self, message: vkbottle.user.Message):
+        if message.from_id == self.my_id:
+            if message.text == "///get-substitutions":
+                await self._send_message(
+                    original_message=message, text=self.substitutions_string
+                )
+            elif message.text.startswith("///set-substitutions"):
+                new_substitutions_string = (
+                    message.text[20:].lstrip()  # len("///set-substitutions")
+                )
+                try:
+                    self.substitutions = json.loads(new_substitutions_string)
+                except json.JSONDecodeError:
+                    await self._send_message(
+                        original_message=message, text="Unable to decode JSON!"
+                    )
+                else:
+                    open(
+                        self.substitutions_file_name, "w", encoding="utf-8"
+                    ).write(new_substitutions_string)
+                    self.substitutions_string = new_substitutions_string
+                    await self._send_message(
+                        original_message=message,
+                        text="JSON was loaded successfully!"
+                    )
+            else:
+                try:
+                    substitution = self.substitutions[message.text]
+                except KeyError:
+                    pass
+                else:
+                    await self.bot.api.messages.edit(
+                        peer_id=message.peer_id, message_id=message.id,
+                        message=substitution, keep_forward_messages=True,
+                        dont_parse_links=True
+                    )
+                    return
 
 
 async def main():
     loguru.logger.remove()
     loguru.logger.add(sys.stdout, level="WARNING")
-    me = (await bot.api.users.get())[0]
-    global my_id
-    my_id = me.id
     print("Starting!")
-    await bot.run_polling()
+    await Bot.make().start()
 
 
 asyncio.get_event_loop().run_until_complete(main())
