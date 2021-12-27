@@ -1,6 +1,7 @@
 import asyncio
 import json
 import random
+import re
 import sys
 from typing import Optional, Dict
 
@@ -18,8 +19,13 @@ class Bot:
         self.bot = bot
         self.substitutions_string = substitutions_string
         self.substitutions = substitutions
+        self.substitutions_regex: Optional[re.Pattern] = None
+        self.cache_substitutions_regex()
         self.my_id: Optional[int] = None
         self.substitutions_file_name = substitutions_file_name
+
+    def cache_substitutions_regex(self) -> None:
+        self.substitutions_regex = re.compile("|".join(self.substitutions))
 
     @classmethod
     def make(cls):
@@ -49,6 +55,9 @@ class Bot:
             random_id=random.randint(-1_000_000, 1_000_000)
         )
 
+    def _get_substitution(self, key: re.Match):
+        return self.substitutions[key.group(0)]
+
     async def on_message(self, message: vkbottle.user.Message):
         if message.from_id == self.my_id:
             if message.text == "///get-substitutions":
@@ -66,6 +75,7 @@ class Bot:
                         original_message=message, text="Unable to decode JSON!"
                     )
                 else:
+                    self.cache_substitutions_regex()
                     open(
                         self.substitutions_file_name, "w", encoding="utf-8"
                     ).write(new_substitutions_string)
@@ -76,16 +86,19 @@ class Bot:
                     )
             else:
                 try:
-                    substitution = self.substitutions[message.text]
+                    new_string, changes_amount = self.substitutions_regex.subn(
+                        self._get_substitution, message.text
+                    )
                 except KeyError:
                     pass
                 else:
-                    await self.bot.api.messages.edit(
-                        peer_id=message.peer_id, message_id=message.id,
-                        message=substitution, keep_forward_messages=True,
-                        dont_parse_links=True
-                    )
-                    return
+                    if changes_amount != 0:
+                        await self.bot.api.messages.edit(
+                            peer_id=message.peer_id, message_id=message.id,
+                            message=new_string, keep_forward_messages=True,
+                            dont_parse_links=True
+                        )
+                        return
 
 
 async def main():
