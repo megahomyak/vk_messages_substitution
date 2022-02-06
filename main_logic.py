@@ -108,7 +108,7 @@ async def main():
     loguru.logger.remove()
     loguru.logger.add(sys.stdout, level="WARNING")
     print("Starting!")
-    await Bot.make(substitutions_prefix="$").start()
+    await Bot.make(substitutions_prefix="%").start()
 
 
 asyncio.get_event_loop().run_until_complete(main())
