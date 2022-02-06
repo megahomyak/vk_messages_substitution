@@ -28,7 +28,7 @@ class Bot:
         self.substitutions_regex = re.compile("|".join(self.substitutions))
 
     @classmethod
-    def make(cls):
+    def make(cls, substitutions_prefix: str = ""):
         bot = vkbottle.user.User(token=open("token.txt").read())
         substitutions_string = (
             open(DEFAULT_SUBSTITUTIONS_FILE_NAME, encoding="utf-8").read()
@@ -36,7 +36,10 @@ class Bot:
         obj = cls(
             bot=bot,
             substitutions_string=substitutions_string,
-            substitutions=json.loads(substitutions_string),
+            substitutions={
+                substitutions_prefix + key: value
+                for key, value in json.loads(substitutions_string).items()
+            },
             substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME
         )
         bot.on.message()(obj.on_message)
@@ -105,7 +108,7 @@ async def main():
     loguru.logger.remove()
     loguru.logger.add(sys.stdout, level="WARNING")
     print("Starting!")
-    await Bot.make().start()
+    await Bot.make(substitutions_prefix="$").start()
 
 
 asyncio.get_event_loop().run_until_complete(main())
