@@ -27,10 +27,9 @@ class Bot:
         self.substitutions_file_name = substitutions_file_name
 
     def cache_substitutions_regex(self) -> None:
-        self.substitutions_regex = re.compile("|".join(
-            self.prefix + substitution
-            for substitution in self.substitutions.keys()
-        ))
+        self.substitutions_regex = re.compile(self.prefix + "(" + "|".join(
+            self.substitutions.keys()
+        ) + ")")
 
     @classmethod
     def make(cls, substitutions_prefix: str = "%"):
@@ -62,7 +61,7 @@ class Bot:
         )
 
     def _get_substitution(self, key: re.Match):
-        return self.substitutions[key.group(0)]
+        return self.substitutions[key.group(1)]
 
     async def on_message(self, message: vkbottle.user.Message):
         if message.from_id == self.my_id:
