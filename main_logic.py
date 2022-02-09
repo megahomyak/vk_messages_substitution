@@ -15,7 +15,8 @@ class Bot:
 
     def __init__(
             self, bot: vkbottle.user.User, substitutions_string: str,
-            substitutions: Dict[str, str], substitutions_file_name: str):
+            substitutions: Dict[str, str], substitutions_file_name: str,
+            prefix: str):
         self.bot = bot
         self.substitutions_string = substitutions_string
         self.substitutions = substitutions
@@ -23,12 +24,15 @@ class Bot:
         self.cache_substitutions_regex()
         self.my_id: Optional[int] = None
         self.substitutions_file_name = substitutions_file_name
+        self.prefix = prefix
 
     def cache_substitutions_regex(self) -> None:
-        self.substitutions_regex = re.compile("|".join(self.substitutions))
+        self.substitutions_regex = re.compile("|".join(
+            self.prefix + substitution for substitution in self.substitutions
+        ))
 
     @classmethod
-    def make(cls, substitutions_prefix: str = ""):
+    def make(cls, substitutions_prefix: str = "%"):
         bot = vkbottle.user.User(token=open("token.txt").read())
         substitutions_string = (
             open(DEFAULT_SUBSTITUTIONS_FILE_NAME, encoding="utf-8").read()
@@ -36,11 +40,9 @@ class Bot:
         obj = cls(
             bot=bot,
             substitutions_string=substitutions_string,
-            substitutions={
-                substitutions_prefix + key: value
-                for key, value in json.loads(substitutions_string).items()
-            },
-            substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME
+            substitutions=json.loads(substitutions_string).items(),
+            substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME,
+            prefix=substitutions_prefix
         )
         bot.on.message()(obj.on_message)
         return obj
