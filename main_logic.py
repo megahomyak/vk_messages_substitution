@@ -27,7 +27,6 @@ class Bot:
         self.substitutions_file_name = substitutions_file_name
 
     def cache_substitutions_regex(self) -> None:
-        print(self.prefix, self.substitutions)
         self.substitutions_regex = re.compile("|".join(
             self.prefix + substitution
             for substitution in self.substitutions.keys()
@@ -42,7 +41,7 @@ class Bot:
         obj = cls(
             bot=bot,
             substitutions_string=substitutions_string,
-            substitutions=json.loads(substitutions_string).items(),
+            substitutions=json.loads(substitutions_string),
             substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME,
             prefix=substitutions_prefix
         )
