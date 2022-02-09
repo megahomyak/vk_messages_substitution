@@ -27,8 +27,10 @@ class Bot:
         self.substitutions_file_name = substitutions_file_name
 
     def cache_substitutions_regex(self) -> None:
+        print(self.prefix, self.substitutions)
         self.substitutions_regex = re.compile("|".join(
-            self.prefix + substitution for substitution in self.substitutions
+            self.prefix + substitution
+            for substitution in self.substitutions.keys()
         ))
 
     @classmethod
