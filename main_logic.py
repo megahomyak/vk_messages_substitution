@@ -21,10 +21,10 @@ class Bot:
         self.substitutions_string = substitutions_string
         self.substitutions = substitutions
         self.substitutions_regex: Optional[re.Pattern] = None
+        self.prefix = prefix
         self.cache_substitutions_regex()
         self.my_id: Optional[int] = None
         self.substitutions_file_name = substitutions_file_name
-        self.prefix = prefix
 
     def cache_substitutions_regex(self) -> None:
         self.substitutions_regex = re.compile("|".join(
