@@ -10,6 +10,20 @@ import vkbottle.user
 
 DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 
+ULINE_AND_CROSS_REGEX = re.compile(
+    r"%(?P<method>uline|cross)(?P<text>.+)%(\1)"
+)
+
+
+def merge(text, character):
+    return "".join(character + t for t in text) + character
+
+
+cross_uline_dict = {
+    "cross": lambda text: merge(text, "&#0822;"),
+    "uline": lambda text: merge(text, "\u0332")
+}
+
 
 class Bot:
 
@@ -61,17 +75,21 @@ class Bot:
         )
 
     def _get_substitution(self, key: re.Match):
+        text = key.group(1)
+        if text in ("cross", "uline"):
+            return text
         return self.substitutions[key.group(1)]
 
     async def on_message(self, message: vkbottle.user.Message):
         if message.from_id == self.my_id:
-            if message.text == "///get-substitutions":
+            text = message.text
+            if text == "///get-substitutions":
                 await self._send_message(
                     original_message=message, text=self.substitutions_string
                 )
-            elif message.text.startswith("///set-substitutions"):
+            elif text.startswith("///set-substitutions"):
                 new_substitutions_string = (
-                    message.text[20:].lstrip()  # len("///set-substitutions")
+                    text[20:].lstrip()  # len("///set-substitutions")
                 )
                 try:
                     self.substitutions = json.loads(new_substitutions_string)
@@ -90,29 +108,40 @@ class Bot:
                         text="JSON was loaded successfully!"
                     )
             else:
+                text_was_updated = False
                 try:
                     new_string, changes_amount = self.substitutions_regex.subn(
-                        self._get_substitution, message.text
+                        self._get_substitution, text
                     )
                 except KeyError:
                     pass
                 else:
                     if changes_amount != 0:
-                        attachments_list = []
-                        for attachment in message.attachments:
-                            typename = attachment.type.value
-                            attachment = getattr(attachment, typename)
-                            attachments_list.append(
-                                f"{typename}{attachment.owner_id}"
-                                f"_{attachment.id}"
-                            )
-                        await self.bot.api.messages.edit(
-                            peer_id=message.peer_id, message_id=message.id,
-                            message=new_string, keep_forward_messages=True,
-                            dont_parse_links=True,
-                            attachment=",".join(attachments_list)
+                        text = new_string
+                        text_was_updated = True
+                new_string, changes_amount = ULINE_AND_CROSS_REGEX.subn(
+                    lambda match: cross_uline_dict[match.group("method")](
+                        match.group("text")
+                    ), text
+                )
+                if changes_amount != 0:
+                    text = new_string
+                    text_was_updated = True
+                if text_was_updated:
+                    attachments_list = []
+                    for attachment in message.attachments:
+                        typename = attachment.type.value
+                        attachment = getattr(attachment, typename)
+                        attachments_list.append(
+                            f"{typename}{attachment.owner_id}"
+                            f"_{attachment.id}"
                         )
-                        return
+                    await self.bot.api.messages.edit(
+                        peer_id=message.peer_id, message_id=message.id,
+                        message=text, keep_forward_messages=True,
+                        dont_parse_links=True,
+                        attachment=",".join(attachments_list)
+                    )
 
 
 async def main():
