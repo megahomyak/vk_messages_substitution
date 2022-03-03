@@ -6,11 +6,7 @@ import sys
 from typing import Optional, Dict
 
 import loguru
-import vkbottle
-# noinspection PyProtectedMember
-from vkbottle_types.events.user_events import RawUserEvent
-
-from converted_raw_event import ConvertedRawUserMessage
+import vkbottle.user
 
 DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 
@@ -48,8 +44,7 @@ class Bot:
             substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME,
             prefix=substitutions_prefix
         )
-        # noinspection PyArgumentList
-        bot.on.raw_event(4)(obj.on_message)
+        bot.on.message()(obj.on_message)
         return obj
 
     async def start(self):
@@ -58,7 +53,7 @@ class Bot:
         await self.bot.run_polling()
 
     async def _send_message(
-            self, original_message: ConvertedRawUserMessage, text: str):
+            self, original_message: vkbottle.user.Message, text: str):
         await self.bot.api.messages.send(
             peer_id=original_message.peer_id, message=text,
             dont_parse_links=True, disable_mentions=True,
@@ -68,9 +63,7 @@ class Bot:
     def _get_substitution(self, key: re.Match):
         return self.substitutions[key.group(1)]
 
-    async def on_message(self, message: RawUserEvent):
-        print(message)
-        message = ConvertedRawUserMessage.from_raw_user_message(message.object)
+    async def on_message(self, message: vkbottle.user.Message):
         if message.from_id == self.my_id:
             if message.text == "///get-substitutions":
                 await self._send_message(
@@ -105,11 +98,19 @@ class Bot:
                     pass
                 else:
                     if changes_amount != 0:
+                        attachments_list = []
+                        for attachment in message.attachments:
+                            typename = attachment.type.value
+                            attachment = getattr(attachment, typename)
+                            attachments_list.append(
+                                f"{typename}{attachment.owner_id}"
+                                f"_{attachment.id}"
+                            )
                         await self.bot.api.messages.edit(
                             peer_id=message.peer_id, message_id=message.id,
                             message=new_string, keep_forward_messages=True,
                             dont_parse_links=True,
-                            attachment=message.attachments
+                            attachment=",".join(attachments_list)
                         )
                         return
 
