@@ -6,7 +6,11 @@ import sys
 from typing import Optional, Dict
 
 import loguru
-import vkbottle.user
+import vkbottle
+# noinspection PyProtectedMember
+from vkbottle_types.events.user_events import RawUserEvent
+
+from converted_raw_event import ConvertedRawUserMessage
 
 DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 
@@ -14,7 +18,7 @@ DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 class Bot:
 
     def __init__(
-            self, bot: vkbottle.user.User, substitutions_string: str,
+            self, bot: vkbottle.User, substitutions_string: str,
             substitutions: Dict[str, str], substitutions_file_name: str,
             prefix: str):
         self.bot = bot
@@ -33,7 +37,7 @@ class Bot:
 
     @classmethod
     def make(cls, substitutions_prefix: str = "%"):
-        bot = vkbottle.user.User(token=open("token.txt").read())
+        bot = vkbottle.User(token=open("token.txt").read())
         substitutions_string = (
             open(DEFAULT_SUBSTITUTIONS_FILE_NAME, encoding="utf-8").read()
         )
@@ -44,7 +48,8 @@ class Bot:
             substitutions_file_name=DEFAULT_SUBSTITUTIONS_FILE_NAME,
             prefix=substitutions_prefix
         )
-        bot.on.message()(obj.on_message)
+        # noinspection PyArgumentList
+        bot.on.raw_event(4)(obj.on_message)
         return obj
 
     async def start(self):
@@ -53,7 +58,7 @@ class Bot:
         await self.bot.run_polling()
 
     async def _send_message(
-            self, original_message: vkbottle.user.Message, text: str):
+            self, original_message: ConvertedRawUserMessage, text: str):
         await self.bot.api.messages.send(
             peer_id=original_message.peer_id, message=text,
             dont_parse_links=True, disable_mentions=True,
@@ -63,7 +68,9 @@ class Bot:
     def _get_substitution(self, key: re.Match):
         return self.substitutions[key.group(1)]
 
-    async def on_message(self, message: vkbottle.user.Message):
+    async def on_message(self, message: RawUserEvent):
+        print(message)
+        message = ConvertedRawUserMessage.from_raw_user_message(message.object)
         if message.from_id == self.my_id:
             if message.text == "///get-substitutions":
                 await self._send_message(
@@ -101,7 +108,8 @@ class Bot:
                         await self.bot.api.messages.edit(
                             peer_id=message.peer_id, message_id=message.id,
                             message=new_string, keep_forward_messages=True,
-                            dont_parse_links=True
+                            dont_parse_links=True,
+                            attachment=message.attachments
                         )
                         return
 
