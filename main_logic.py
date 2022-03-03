@@ -92,7 +92,7 @@ class Bot:
         return inner
 
     async def on_message(self, message: vkbottle.user.Message):
-        if message.from_id == self.my_id:
+        if message.from_id == self.my_id and message.text:
             text = message.text
             if text == "///get-substitutions":
                 await self._send_message(
