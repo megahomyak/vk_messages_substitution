@@ -82,9 +82,6 @@ class Bot:
         )
 
     def _get_substitution(self, key: re.Match):
-        text = key.group(1)
-        if text in ("cross", "uline"):
-            return text
         return self.substitutions[key.group(1)]
 
     # noinspection PyMethodMayBeStatic
