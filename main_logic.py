@@ -110,7 +110,7 @@ class Bot:
                     self.cache_and_save_attachments()
                     await message.answer("Attachments were set")
                 else:
-                    await message.answer("Image not found")
+                    await message.answer("Attachments not found")
             elif text.startswith("///delete-attachments"):
                 attachment_name = (
                     text[21:].lstrip()  # len("///delete-attachments")
@@ -118,10 +118,10 @@ class Bot:
                 try:
                     del self.attachments[attachment_name]
                 except KeyError:
-                    await message.answer("Attachment not found")
+                    await message.answer("Attachments not found")
                 else:
                     self.cache_and_save_attachments()
-                    await message.answer("Attachment successfully deleted")
+                    await message.answer("Attachments successfully deleted")
             elif text == "///get-attachments":
                 await message.answer(json.dumps(self.attachments, indent=4))
             elif text.startswith("///set-substitutions"):
