@@ -37,12 +37,12 @@ class Bot:
 
     def cache_substitutions_regex(self) -> None:
         self.substitutions_regex = re.compile(self.prefix + "(" + "|".join(
-            self.substitutions.keys()
+            re.escape(key) for key in self.substitutions.keys()
         ) + ")")
 
     def cache_attachments(self) -> None:
         self.attachments_regex = re.compile(self.prefix + "(" + "|".join(
-            self.attachments.keys()
+            re.escape(key) for key in self.attachments.keys()
         ) + ")")
 
     def cache_and_save_attachments(self) -> None:
