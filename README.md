@@ -2,6 +2,8 @@
 
 > WARNING: "substitutions" are just text substitutions, while "attachments" are being added to the current message as attachments
 
+Also don't forget to put your token in `token.json`, you know...
+
 `attachments.json` **SHOULD NOT BE FILLED MANUALLY!**
 `substitutions.json` **SHOULD BE FILLED MANUALLY!** (format: `{"pattern": "substitution", "pattern": "substitution", ...}`)
 
