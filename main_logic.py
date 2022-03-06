@@ -22,7 +22,7 @@ class Bot:
             self, bot: vkbottle.User,
             substitutions: Dict[str, str], substitutions_file_name: str,
             prefix: str, attachments: Dict[str, str],
-            attachments_file_name: str):
+            attachments_file_name: str, uline_and_cross_regex: re.Pattern):
         self.bot = bot
         # -----
         self.substitutions = substitutions
@@ -33,6 +33,7 @@ class Bot:
         self.cache_substitutions_regex()
         self.cache_attachments()
         # -----
+        self.uline_and_cross_regex = uline_and_cross_regex
         self.my_id: Optional[int] = None
         self.substitutions_file_name = substitutions_file_name
         self.attachments_file_name = attachments_file_name
@@ -65,7 +66,11 @@ class Bot:
             attachments=json.load(
                 open(DEFAULT_ATTACHMENTS_FILE_NAME, encoding="utf-8")
             ),
-            attachments_file_name=DEFAULT_ATTACHMENTS_FILE_NAME
+            attachments_file_name=DEFAULT_ATTACHMENTS_FILE_NAME,
+            uline_and_cross_regex=re.compile(
+                rf"{substitutions_prefix}(?P<method>uline|cross)"
+                rf"(?P<text>.+?){substitutions_prefix}(\1)"
+            )
         )
         bot.on.message()(obj.on_message)
         return obj
