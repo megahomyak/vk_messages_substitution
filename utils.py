@@ -16,7 +16,7 @@ def get_attachments_string(message: vkbottle.user.Message):
 
 
 ULINE_AND_CROSS_REGEX = re.compile(
-    r"%(?P<method>uline|cross)(?P<text>.+)%(\1)"
+    r"%(?P<method>uline|cross)(?P<text>.+?)%(\1)"
 )
 
 
