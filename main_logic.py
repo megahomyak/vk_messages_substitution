@@ -13,6 +13,8 @@ import utils
 DEFAULT_SUBSTITUTIONS_FILE_NAME = "substitutions.json"
 DEFAULT_ATTACHMENTS_FILE_NAME = "attachments.json"
 
+HELP_MESSAGE = open("help_message.txt", encoding="utf-8").read()
+
 
 class Bot:
 
@@ -100,6 +102,8 @@ class Bot:
                         self.substitutions, indent=4
                     )
                 )
+            elif text == "///help":
+                await message.answer(HELP_MESSAGE)
             elif text.startswith("///set-attachments"):
                 attachment_name = (
                     text[18:].lstrip()  # len("///add-attachments")
