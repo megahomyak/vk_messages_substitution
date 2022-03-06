@@ -21,3 +21,5 @@ Default macro prefix is `%`
 * `///set-attachments {name}` - set attachments from the current message to a specified key
 * `///delete-attachments {name}` - delete attachments by the specified name
 * `///get-attachments` - get attachments JSON, pretty useless
+
+* `///help` - this message
