@@ -174,7 +174,7 @@ class Bot:
                         if attachments:
                             attachments += ","
                         attachments += ",".join(additional_attachments)
-                new_string, changes_amount = utils.ULINE_AND_CROSS_REGEX.subn(
+                new_string, changes_amount = self.uline_and_cross_regex.subn(
                     lambda match: utils.cross_uline_dict[match.group("method")](
                         match.group("text")
                     ), text

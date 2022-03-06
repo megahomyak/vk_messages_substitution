@@ -1,5 +1,3 @@
-import re
-
 import vkbottle.user
 
 
@@ -13,11 +11,6 @@ def get_attachments_string(message: vkbottle.user.Message):
             f"_{attachment.id}"
         )
     return ",".join(attachments_list)
-
-
-ULINE_AND_CROSS_REGEX = re.compile(
-    r"%(?P<method>uline|cross)(?P<text>.+?)%(\1)"
-)
 
 
 def merge(text, character):
