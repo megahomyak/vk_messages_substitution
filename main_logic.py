@@ -104,7 +104,7 @@ class Bot:
             if text == "///get-substitutions":
                 await self._send_message(
                     original_message=message, text=json.dumps(
-                        self.substitutions, indent=4
+                        self.substitutions, indent=4, ensure_ascii=False,
                     )
                 )
             elif text == "///help":
@@ -132,7 +132,9 @@ class Bot:
                     self.cache_and_save_attachments()
                     await message.answer("Attachments successfully deleted")
             elif text == "///get-attachments":
-                await message.answer(json.dumps(self.attachments, indent=4))
+                await message.answer(json.dumps(
+                    self.attachments, indent=4, ensure_ascii=False,
+                ))
             elif text.startswith("///set-substitutions"):
                 new_substitutions_string = (
                     text[20:].lstrip()  # len("///set-substitutions")
