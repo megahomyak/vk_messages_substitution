@@ -5,6 +5,7 @@
 Also don't forget to put your token in `token.txt`, you know...
 
 `attachments.json` **SHOULD NOT BE FILLED MANUALLY!**
+
 `substitutions.json` **SHOULD BE FILLED MANUALLY!** (format: `{"pattern": "substitution", "pattern": "substitution", ...}`)
 
 `uline` and `cross` do not depend on any of the configs.
